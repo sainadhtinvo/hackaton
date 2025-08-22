@@ -9,7 +9,9 @@ import io
 import os
 import json
 import openai
+from dotenv import load_dotenv
 
+load_dotenv()
 app = FastAPI(title="Requirement Validator")
 
 # Allow CORS for frontend testing
@@ -40,6 +42,7 @@ def call_model(payload: dict):
 
     try:
         messages = []
+        import ipdb; ipdb.set_trace()
 
         if payload["type"] == "text":
             messages.append({
@@ -65,6 +68,26 @@ def call_model(payload: dict):
                 "issues": ["❌ Unsupported payload type"],
                 "suggestions": ["Use 'text', 'image', or 'multimodal'"]
             }
+        
+        messages.append({
+            "role": "user",
+            "content": (
+                "You are a Requirements Validator. Do NOT use markdown or code blocks. Respond ONLY with valid JSON.\n"
+                "Check the following requirements document and provide a JSON object with exactly these keys:\n"
+                "{\n"
+                '  "score": int (0-100),\n'
+                '  "issues": list of strings,\n'
+                '  "suggestions": list of strings\n'
+                "}\n"
+                "- Check if acceptance criteria are mentioned.\n"
+                "- Detect conflicting statements.\n"
+                "- Check if design is attached and referenced.\n"
+                "- Identify dependencies (API, data, third-party) mentioned.\n\n"
+                "Here is the requirements document:\n"
+                f"{payload['content']}\n\n"
+                "Return JSON ONLY, no explanations, no markdown, no backticks."
+            )
+        })
 
         # Send to GPT-4o (multimodal capable)
         response = openai.chat.completions.create(
@@ -74,7 +97,7 @@ def call_model(payload: dict):
         )
 
         # Extract text
-        ai_content = response.choices[0].message["content"]
+        ai_content = response.choices[0].message.content
 
         # Try to parse JSON
         try:
