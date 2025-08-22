@@ -42,7 +42,6 @@ def call_model(payload: dict):
 
     try:
         messages = []
-        import ipdb; ipdb.set_trace()
 
         if payload["type"] == "text":
             messages.append({
